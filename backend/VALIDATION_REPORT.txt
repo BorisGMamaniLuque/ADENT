@@ -1,0 +1,16 @@
+ADENT MVP BACKEND ESCALABLE - VALIDATION REPORT
+Date: 2026-09-01
+
+Validated in artifact environment:
+- pom.xml XML syntax: OK
+- Postman collection JSON syntax: OK
+- Java package/path consistency: OK
+- Java parser pass: no Java syntax-pattern errors detected before external dependency resolution
+- Base Flyway schema tables: 49
+- Java source files: 68
+- Dockerfile / docker-compose / .env.example included
+
+Limitation of this execution environment:
+- Maven is not installed in the runtime and external binary download is blocked, so a full `mvn test` dependency-resolution build could not be executed here.
+- The project includes a Dockerfile using Maven, so on a machine with Docker the definitive build command is:
+  docker compose up -d --build

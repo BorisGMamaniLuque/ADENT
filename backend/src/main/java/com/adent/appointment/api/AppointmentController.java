@@ -1,0 +1,10 @@
+package com.adent.appointment.api;
+import com.adent.appointment.domain.*; import com.adent.appointment.repository.AppointmentRepository; import com.adent.patient.repository.PatientRepository; import com.adent.shared.exception.NotFoundException; import com.adent.shared.security.CurrentUser; import com.adent.staff.repository.StaffRepository; import jakarta.validation.Valid; import org.springframework.security.access.prepost.PreAuthorize; import org.springframework.web.bind.annotation.*; import java.time.*; import java.util.*;
+@RestController @RequestMapping("/api/appointments") @PreAuthorize("hasAnyRole('OWNER','RECEPTION','DENTIST')")
+public class AppointmentController {
+ private final CurrentUser current; private final AppointmentRepository repo; private final PatientRepository patients; private final StaffRepository staff;
+ public AppointmentController(CurrentUser c,AppointmentRepository r,PatientRepository p,StaffRepository s){current=c;repo=r;patients=p;staff=s;}
+ @GetMapping public List<Appointment> list(@RequestParam OffsetDateTime from,@RequestParam OffsetDateTime to){return repo.findByTenantIdAndStartsAtBetweenOrderByStartsAt(current.tenantId(),from,to);}
+ @PostMapping public Appointment create(@Valid @RequestBody AppointmentRequest r){UUID t=current.tenantId();patients.findByIdAndTenantId(r.patientId(),t).orElseThrow(()->new NotFoundException("Paciente no encontrado"));staff.findByIdAndTenantId(r.staffId(),t).orElseThrow(()->new NotFoundException("Profesional no encontrado"));Appointment a=new Appointment();a.setTenantId(t);a.setPatientId(r.patientId());a.setStaffId(r.staffId());a.setRoomId(r.roomId());a.setStartsAt(r.startsAt());a.setEndsAt(r.endsAt());a.setReason(r.reason());if(r.status()!=null)a.setStatus(r.status());return repo.save(a);}
+ @PatchMapping("/{id}/status") public Appointment status(@PathVariable UUID id,@RequestParam AppointmentStatus status){Appointment a=repo.findByIdAndTenantId(id,current.tenantId()).orElseThrow(()->new NotFoundException("Cita no encontrada"));a.setStatus(status);return repo.save(a);}
+}

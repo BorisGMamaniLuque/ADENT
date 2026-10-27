@@ -1,0 +1,8 @@
+package com.adent.clinical.domain;
+import com.adent.shared.domain.BaseEntity; import jakarta.persistence.*; import java.time.OffsetDateTime; import java.util.UUID;
+@Entity @Table(name="clinical_forms")
+public class ClinicalForm extends BaseEntity {
+ @Column(name="tenant_id",nullable=false) private UUID tenantId; @Column(name="patient_id",nullable=false) private UUID patientId; @Column(name="encounter_id") private UUID encounterId;
+ @Column(name="form_type",nullable=false,length=60) private String formType; @Column(name="data_json",nullable=false,columnDefinition="text") private String dataJson="{}"; @Column(nullable=false,length=30) private String status="DRAFT"; @Column(name="recorded_by",length=80) private String recordedBy; @Column(name="recorded_at",nullable=false) private OffsetDateTime recordedAt=OffsetDateTime.now();
+ public UUID getTenantId(){return tenantId;} public void setTenantId(UUID v){tenantId=v;} public UUID getPatientId(){return patientId;} public void setPatientId(UUID v){patientId=v;} public UUID getEncounterId(){return encounterId;} public void setEncounterId(UUID v){encounterId=v;} public String getFormType(){return formType;} public void setFormType(String v){formType=v;} public String getDataJson(){return dataJson;} public void setDataJson(String v){dataJson=v;} public String getStatus(){return status;} public void setStatus(String v){status=v;} public String getRecordedBy(){return recordedBy;} public void setRecordedBy(String v){recordedBy=v;} public OffsetDateTime getRecordedAt(){return recordedAt;} public void setRecordedAt(OffsetDateTime v){recordedAt=v;}
+}

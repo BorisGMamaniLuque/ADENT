@@ -1,0 +1,15 @@
+import React,{useState} from 'react'
+import {Link,useNavigate} from 'react-router-dom'
+import http,{apiError} from '../../../api/http'
+
+export default function ForgotPasswordPage(){
+ const navigate=useNavigate()
+ const[channel,setChannel]=useState('EMAIL'),[destination,setDestination]=useState(''),[code,setCode]=useState(''),[password,setPassword]=useState(''),[confirm,setConfirm]=useState('')
+ const[step,setStep]=useState(1),[message,setMessage]=useState(''),[error,setError]=useState(''),[devCode,setDevCode]=useState(''),[busy,setBusy]=useState(false)
+ async function requestCode(e){e.preventDefault();setBusy(true);setError('');try{const{data}=await http.post('/auth/password-recovery/request',{channel,destination});setMessage(data.message);setDevCode(data.developmentCode||'');setStep(2)}catch(e){setError(apiError(e))}finally{setBusy(false)}}
+ async function reset(e){e.preventDefault();setError('');if(password!==confirm){setError('Las contraseñas no coinciden');return}setBusy(true);try{const{data}=await http.post('/auth/password-recovery/reset',{channel,destination,code,newPassword:password});setMessage(data.message);setTimeout(()=>navigate('/login'),900)}catch(e){setError(apiError(e))}finally{setBusy(false)}}
+ return <div className="auth-page"><div className="recovery-card"><div className="logo-big">A</div><h1>Recuperar contraseña</h1><p>Recibe un código usando los datos registrados en tu cuenta.</p>{error&&<div className="alert error">{error}</div>}{message&&<div className="alert success">{message}</div>}
+ {step===1?<form onSubmit={requestCode} className="stack-form"><label>¿Dónde deseas recibir el código?<select value={channel} onChange={e=>setChannel(e.target.value)}><option value="EMAIL">Correo electrónico</option><option value="SMS">Teléfono celular</option></select></label><label>{channel==='EMAIL'?'Correo registrado':'Celular registrado'}<input required type={channel==='EMAIL'?'email':'tel'} value={destination} onChange={e=>setDestination(e.target.value)}/></label><button className="primary" disabled={busy}>{busy?'Generando…':'Enviar código'}</button></form>:
+ <form onSubmit={reset} className="stack-form">{devCode&&<div className="dev-code"><small>Modo desarrollo · código de prueba</small><strong>{devCode}</strong><span>En producción se enviará por el proveedor configurado.</span></div>}<label>Código de 6 dígitos<input required inputMode="numeric" pattern="[0-9]{6}" maxLength="6" value={code} onChange={e=>setCode(e.target.value.replace(/\D/g,''))}/></label><label>Nueva contraseña<input required minLength="8" type="password" value={password} onChange={e=>setPassword(e.target.value)}/></label><label>Confirmar contraseña<input required minLength="8" type="password" value={confirm} onChange={e=>setConfirm(e.target.value)}/></label><button className="primary" disabled={busy}>{busy?'Actualizando…':'Cambiar contraseña'}</button><button type="button" onClick={()=>{setStep(1);setCode('');setDevCode('')}}>Solicitar otro código</button></form>}
+ <Link className="back-link" to="/login">← Volver a iniciar sesión</Link></div></div>
+}

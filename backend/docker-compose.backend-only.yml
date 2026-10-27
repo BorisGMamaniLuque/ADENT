@@ -1,0 +1,69 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: adent-postgresql
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-adent}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      TZ: America/Lima
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - adent_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-adent}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  backend:
+    build: .
+    container_name: adent-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-adent}
+      DB_USERNAME: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      JWT_SECRET: ${JWT_SECRET:-ADENT-DOCKER-SECRET-CHANGE-THIS-KEY-123456789}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
+      SUPERADMIN_USERNAME: ${SUPERADMIN_USERNAME:-superadmin}
+      SUPERADMIN_PASSWORD: ${SUPERADMIN_PASSWORD:-ChangeMe123!}
+      OWNER_USERNAME: ${OWNER_USERNAME:-owner}
+      OWNER_PASSWORD: ${OWNER_PASSWORD:-Owner123!}
+      DEMO_TENANT: ${DEMO_TENANT:-demo-dental}
+      TZ: America/Lima
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:latest
+    container_name: adent-minio
+    profiles: ["storage"]
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-adentadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-ChangeMinio123!}
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - adent_minio_data:/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: adent-redis
+    profiles: ["cache"]
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - adent_redis_data:/data
+
+volumes:
+  adent_postgres_data:
+  adent_minio_data:
+  adent_redis_data:
